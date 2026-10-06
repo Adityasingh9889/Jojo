@@ -1,0 +1,6 @@
+{
+  "image_url": "https://example.com/your-public-image.jpg",
+  "hook": "Why does DNS matter?",
+  "body": "Your browser needs the IP before it can reach the server.",
+  "duration": 15
+}
