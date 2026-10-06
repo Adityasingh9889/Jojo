@@ -47,11 +47,11 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_QA_MODEL: ${{ vars.OPENAI_QA_MODEL }}
           META_GRAPH_VERSION: ${{ vars.META_GRAPH_VERSION }}
-          PUBLISH_SOURCE_URL: ${{ vars.PUBLISH_SOURCE_URL }}
+          PUBLISH_SOURCE_TEMPLATE: ${{ vars.PUBLISH_SOURCE_TEMPLATE }}
           QA_MAX_ITERATIONS: "6"
           QA_MIN_SCORE: "9.2"
         run: |
-          python scripts/instagram_quality_loop.py --config creator/publish.json
+          python scripts/instagram_quality_loop_v2.py --config creator/publish.json
 
       - name: Save QA memory
         if: always()
