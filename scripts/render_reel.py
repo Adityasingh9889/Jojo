@@ -3,7 +3,6 @@ import argparse
 import json
 import subprocess
 import textwrap
-import urllib.request
 from pathlib import Path
 
 W, H, FPS = 1080, 1920, 30
@@ -38,7 +37,15 @@ def render(input_path, output):
     title_file = work / "title.txt"
     body_file = work / "body.txt"
 
-    urllib.request.urlretrieve(data["image_url"], image)
+    # Use curl with a browser-like user agent so public image hosts are more reliable.
+    subprocess.run([
+        "curl", "-L", "--fail", "--retry", "3", "--retry-all-errors",
+        "-A", "Mozilla/5.0",
+        data["image_url"], "-o", str(image)
+    ], check=True)
+
+    if image.stat().st_size < 10_000:
+        raise RuntimeError("Downloaded image is unexpectedly small")
 
     hook = textwrap.fill(str(data["hook"]).strip(), width=25)
     body = textwrap.fill(str(data["body"]).strip(), width=34)
