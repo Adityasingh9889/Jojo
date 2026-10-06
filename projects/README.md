@@ -13,4 +13,4 @@ Every day at **6:00 PM IST**, GitHub Actions randomly picks a small project and 
 - ⚡ Mini app
 - 🧪 Experimental build
 
-The workflow can also be started manually from **GitHub → Actions → Daily Random Project → Run workflow**.
+The workflow can also be started manually from **GitHub → Actions → Daily Random Project → Run workflow**.\n\n- **2026-10-06** — [Reaction Game](2026-10-06-reaction-game/) · Game\n

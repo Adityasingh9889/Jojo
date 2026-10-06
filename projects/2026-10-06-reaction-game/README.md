@@ -1,0 +1,1 @@
+# Reaction Game\n\n**Type:** Game\n\nClick the target as fast as possible after it appears.\n\nGenerated automatically by Jojo Daily Bot on 2026-10-06.\n\nOpen index.html in a browser.\n
