@@ -18,6 +18,7 @@ def load(path):
     if duration < 5 or duration > 15:
         raise ValueError("duration must be between 5 and 15 seconds")
     data["duration"] = duration
+    data["music"] = bool(data.get("music", False))
     return data
 
 def validate(path):
@@ -25,6 +26,7 @@ def validate(path):
     print("Validated:", data["duration"], "seconds 9:16")
     print("Hook:", data["hook"])
     print("Image URL present: yes")
+    print("Music:", "ambient original bed" if data["music"] else "off")
 
 def render(input_path, output):
     data = load(input_path)
@@ -44,7 +46,6 @@ def render(input_path, output):
     body_file.write_text(body, encoding="utf-8")
 
     frames = data["duration"] * FPS
-    # Subtle Ken Burns motion + dark readability panels. No audio is invented.
     vf = (
         f"scale={W}:{H}:force_original_aspect_ratio=increase,"
         f"crop={W}:{H},"
@@ -69,21 +70,77 @@ def render(input_path, output):
         "format=yuv420p"
     )
 
-    cmd = [
+    base = [
         "ffmpeg", "-y",
         "-loop", "1", "-i", str(image),
         "-t", str(data["duration"]),
-        "-vf", vf,
-        "-r", str(FPS),
-        "-an",
-        "-c:v", "libx264",
-        "-preset", "veryfast",
-        "-profile:v", "high",
-        "-pix_fmt", "yuv420p",
-        "-b:v", "3M",
-        "-movflags", "+faststart",
-        str(out),
     ]
+
+    if data["music"]:
+        # Original, royalty-free ambient bed generated procedurally in FFmpeg.
+        audio = (
+            "aevalsrc="
+            "0.050*sin(2*PI*220*t)+"
+            "0.032*sin(2*PI*261.63*t)+"
+            "0.024*sin(2*PI*329.63*t)+"
+            "0.018*sin(2*PI*392*t):"
+            "s=44100:d=" + str(data["duration"]) + ","
+            "tremolo=f=0.18:d=0.55,"
+            "volume=0.8"
+        )
+        kick = (
+            "aevalsrc="
+            "0.075*sin(2*PI*64*t)*exp(-38*mod(t,0.5)):"
+            "s=44100:d=" + str(data["duration"]) + ","
+            "volume=0.65"
+        )
+        air = (
+            "anoisesrc=color=pink:amplitude=0.035:"
+            "sample_rate=44100:duration=" + str(data["duration"]) + ","
+            "highpass=f=2500,lowpass=f=9000,volume=0.16"
+        )
+        agraph = (
+            "[1:a]afade=t=in:st=0:d=0.8,afade=t=out:st="
+            + str(max(0, data["duration"]-1.2))
+            + ":d=1.2[a1];"
+            "[2:a][3:a]amix=inputs=2:duration=longest,volume=0.70[a2];"
+            "[a1][a2]amix=inputs=2:duration=longest,volume=0.82[a]"
+        )
+        cmd = base + [
+            "-f", "lavfi", "-i", audio,
+            "-f", "lavfi", "-i", kick,
+            "-f", "lavfi", "-i", air,
+            "-filter_complex", agraph,
+            "-map", "0:v:0", "-map", "[a]",
+            "-vf", vf,
+            "-r", str(FPS),
+            "-c:v", "libx264",
+            "-preset", "veryfast",
+            "-profile:v", "high",
+            "-pix_fmt", "yuv420p",
+            "-b:v", "3M",
+            "-c:a", "aac",
+            "-b:a", "128k",
+            "-ar", "44100",
+            "-ac", "2",
+            "-shortest",
+            "-movflags", "+faststart",
+            str(out),
+        ]
+    else:
+        cmd = base + [
+            "-vf", vf,
+            "-r", str(FPS),
+            "-an",
+            "-c:v", "libx264",
+            "-preset", "veryfast",
+            "-profile:v", "high",
+            "-pix_fmt", "yuv420p",
+            "-b:v", "3M",
+            "-movflags", "+faststart",
+            str(out),
+        ]
+
     subprocess.run(cmd, check=True)
     print("Rendered:", out)
 
