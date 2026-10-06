@@ -2,12 +2,6 @@ name: Instagram Verified Quality Loop
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "creator/publish.json"
-      - "scripts/instagram_quality_loop.py"
-      - "scripts/render_reel.py"
-      - ".github/workflows/instagram-quality-loop.yml"
 
 permissions:
   contents: write
