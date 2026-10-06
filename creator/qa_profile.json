@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "profile_name": "aadityaxo_golden_visual_qa",
+  "purpose": "Persistent visual QA memory for Instagram Stories/Reels. Reuse approved visual language and avoid previously observed defects.",
+  "target": {
+    "story": "9:16",
+    "reel": "9:16",
+    "realism_score_min": 9.2,
+    "publish_only_after_verified": true
+  },
+  "brand_language": {
+    "palette": "deep navy/black with restrained blue/cyan accents",
+    "lighting": "cinematic but physically plausible, mostly cool with controlled warm practical light",
+    "composition": "premium, minimal, mobile-safe, strong subject hierarchy, safe top/bottom UI areas",
+    "texture": "real materials, subtle imperfections, no plastic CGI sheen",
+    "motion": "slow natural camera movement; no impossible physics"
+  },
+  "preferred_story_moods": [
+    "rainy night window + tech desk",
+    "moon/clouds + city lights",
+    "sunset/sunrise + laptop desk",
+    "coding at night + headphones",
+    "clean workspace + coffee + subtle screen glow"
+  ],
+  "must_check": [
+    "opening frame reads immediately on a phone",
+    "no warped hands/devices or broken screens",
+    "no duplicated objects or impossible reflections",
+    "text is sharp and inside Instagram-safe areas",
+    "audio is clean, low-volume, and appropriate",
+    "visual motion is subtle and physically believable",
+    "subject/materials look photographic rather than synthetic",
+    "no accidental brand logos or unsupported product claims"
+  ],
+  "known_bad_patterns": [
+    "external image hotlinks that fail in render environments",
+    "ImageMagick SVG conversion crashes",
+    "complex procedural FFmpeg audio graphs causing render failures",
+    "overly strong zoom or artificial motion",
+    "tiny unreadable technical text",
+    "generic neon-tech CGI without believable materials"
+  ],
+  "review_loop": {
+    "steps": [
+      "generate first candidate",
+      "inspect full frame and representative motion frames",
+      "score realism, composition, text, motion, audio and technical accuracy",
+      "identify concrete defects",
+      "change only the defective elements",
+      "regenerate",
+      "repeat until the candidate clears the publish threshold or the verified free-route budget is exhausted",
+      "save the approved recipe and defect notes for future runs"
+    ],
+    "max_iterations_per_asset": 6,
+    "never_endless": true
+  },
+  "approved_recipe_notes": [
+    "Prefer generated or uploaded stable media over fragile third-party hotlinks.",
+    "Use native Instagram audio only when the publisher can resolve the exact audio safely; otherwise use original/allowed audio.",
+    "Use Higgsfield video analysis for short generated clips when available to support scene-by-scene QA.",
+    "Use Canva for cover/text hierarchy QA when a design asset is involved.",
+    "Use Context7 for current technical facts and documentation when the content is technical."
+  ],
+  "defect_log": [],
+  "approved_examples": []
+}
