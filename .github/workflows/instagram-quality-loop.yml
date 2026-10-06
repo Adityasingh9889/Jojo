@@ -1,0 +1,65 @@
+name: Instagram Verified Quality Loop
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "creator/publish.json"
+      - "scripts/instagram_quality_loop.py"
+      - "scripts/render_reel.py"
+      - ".github/workflows/instagram-quality-loop.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: instagram-verified-quality-loop
+  cancel-in-progress: true
+
+jobs:
+  quality-loop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install media tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Validate required configuration
+        env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          test -n "$IG_USER_ID" || (echo "Missing IG_USER_ID secret" && exit 1)
+          test -n "$META_ACCESS_TOKEN" || (echo "Missing META_ACCESS_TOKEN secret" && exit 1)
+          test -n "$OPENAI_API_KEY" || (echo "Missing OPENAI_API_KEY secret" && exit 1)
+          test -s creator/publish.json
+
+      - name: Render + publish + inspect + delete/rebuild loop
+        env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_QA_MODEL: ${{ vars.OPENAI_QA_MODEL }}
+          META_GRAPH_VERSION: ${{ vars.META_GRAPH_VERSION }}
+          PUBLISH_SOURCE_URL: ${{ vars.PUBLISH_SOURCE_URL }}
+          QA_MAX_ITERATIONS: "6"
+          QA_MIN_SCORE: "9.2"
+        run: |
+          python scripts/instagram_quality_loop.py --config creator/publish.json
+
+      - name: Save QA memory
+        if: always()
+        run: |
+          mkdir -p creator/qa_runs
+          git config user.name "Jojo QA Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add creator/qa_runs creator/publish.json || true
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "🧪 save Instagram QA loop results"
+          git push || true
