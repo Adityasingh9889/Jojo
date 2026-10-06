@@ -17,28 +17,41 @@ concurrency:
 
 jobs:
   render:
-    if: ${{ hashFiles('creator/input.json') != '' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate input
+      - name: Check input
         id: input
+        shell: bash
+        run: |
+          if [ ! -s creator/input.json ]; then
+            echo "valid=false" >> "$GITHUB_OUTPUT"
+            echo "No creator/input.json yet; skipping."
+          else
+            echo "valid=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate input
+        if: steps.input.outputs.valid == 'true'
         run: |
           python scripts/render_reel.py --validate creator/input.json
 
       - name: Render 9:16 Reel
+        if: steps.input.outputs.valid == 'true'
         run: |
           mkdir -p creator/output
           python scripts/render_reel.py --render creator/input.json --output creator/output/latest.mp4
 
       - name: Verify output
+        if: steps.input.outputs.valid == 'true'
         run: |
           test -s creator/output/latest.mp4
           ffprobe -v error -show_entries format=duration:stream=width,height,codec_name -of default=noprint_wrappers=1 creator/output/latest.mp4
 
       - name: Commit latest Reel
+        if: steps.input.outputs.valid == 'true'
         run: |
           git config user.name "Jojo Reel Bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
