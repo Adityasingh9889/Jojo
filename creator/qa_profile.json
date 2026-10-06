@@ -30,7 +30,8 @@
     "audio is clean, low-volume, and appropriate",
     "visual motion is subtle and physically believable",
     "subject/materials look photographic rather than synthetic",
-    "no accidental brand logos or unsupported product claims"
+    "no accidental brand logos or unsupported product claims",
+    "published media must be retrieved and reviewed; otherwise verification fails closed"
   ],
   "known_bad_patterns": [
     "external image hotlinks that fail in render environments",
@@ -52,7 +53,9 @@
       "save the approved recipe and defect notes for future runs"
     ],
     "max_iterations_per_asset": 6,
-    "never_endless": true
+    "never_endless": true,
+    "require_actual_published_media": true,
+    "delete_on_failed_score": true
   },
   "approved_recipe_notes": [
     "Prefer generated or uploaded stable media over fragile third-party hotlinks.",
