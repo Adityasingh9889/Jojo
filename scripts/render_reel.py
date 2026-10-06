@@ -4,6 +4,7 @@ import json
 import subprocess
 import textwrap
 from pathlib import Path
+from urllib.parse import urlparse
 
 W, H, FPS = 1080, 1920, 30
 
@@ -33,19 +34,28 @@ def render(input_path, output):
     out.parent.mkdir(parents=True, exist_ok=True)
     work = Path("/tmp/jojo-reel")
     work.mkdir(parents=True, exist_ok=True)
+
+    url_path = urlparse(data["image_url"]).path.lower()
+    source = work / ("input.svg" if url_path.endswith(".svg") else "input.bin")
     image = work / "input.jpg"
     title_file = work / "title.txt"
     body_file = work / "body.txt"
 
-    # Use curl with a browser-like user agent so public image hosts are more reliable.
     subprocess.run([
         "curl", "-L", "--fail", "--retry", "3", "--retry-all-errors",
-        "-A", "Mozilla/5.0",
-        data["image_url"], "-o", str(image)
+        "-A", "Mozilla/5.0", data["image_url"], "-o", str(source)
     ], check=True)
 
-    if image.stat().st_size < 10_000:
+    if source.stat().st_size < 1000:
         raise RuntimeError("Downloaded image is unexpectedly small")
+
+    if url_path.endswith(".svg"):
+        subprocess.run([
+            "convert", str(source), "-background", "black",
+            "-flatten", "-quality", "92", str(image)
+        ], check=True)
+    else:
+        source.rename(image)
 
     hook = textwrap.fill(str(data["hook"]).strip(), width=25)
     body = textwrap.fill(str(data["body"]).strip(), width=34)
