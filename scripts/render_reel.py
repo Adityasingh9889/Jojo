@@ -21,11 +21,71 @@ def load(path):
     data["music"] = bool(data.get("music", False))
     return data
 
+def make_generated_scene(path):
+    """Create a self-contained 9:16 tech/night background without external assets."""
+    w, h = 540, 960
+    with open(path, "wb") as f:
+        f.write(f"P6\n{w} {h}\n255\n".encode("ascii"))
+        for y in range(h):
+            for x in range(w):
+                t = y / (h - 1)
+                r = int(4 + 4 * t)
+                g = int(10 + 12 * t)
+                b = int(20 + 28 * t)
+                # soft blue/cyan glow behind the window
+                dx = (x - 385) / 220
+                dy = (y - 355) / 260
+                glow = max(0.0, 1.0 - (dx * dx + dy * dy))
+                r += int(3 * glow)
+                g += int(22 * glow)
+                b += int(34 * glow)
+                # skyline blocks
+                if 90 < x < 180 and 265 < y < 615:
+                    r, g, b = 11, 28, 46
+                if 200 < x < 300 and 205 < y < 610:
+                    r, g, b = 13, 34, 54
+                if 320 < x < 418 and 155 < y < 620:
+                    r, g, b = 12, 31, 52
+                if 435 < x < 505 and 245 < y < 620:
+                    r, g, b = 10, 26, 43
+                # desk
+                if y > 610:
+                    r, g, b = 4, 7, 12
+                # laptop body/screen
+                if 115 < y < 660 and 80 < x < 455:
+                    if 95 < y < 575 and 120 < x < 430:
+                        r, g, b = 5, 16, 27
+                    else:
+                        r, g, b = 8, 13, 20
+                # screen glow
+                if 135 < y < 560 and 145 < x < 405:
+                    r, g, b = 5, 19, 32
+                f.write(bytes((max(0,min(255,r)), max(0,min(255,g)), max(0,min(255,b)))))
+
+def prepare_image(data, work):
+    image = work / "input.ppm"
+    if str(data["image_url"]).startswith("generated://"):
+        make_generated_scene(image)
+    else:
+        url_path = urlparse(data["image_url"]).path.lower()
+        source = work / ("input.svg" if url_path.endswith(".svg") else "input.bin")
+        subprocess.run([
+            "curl", "-L", "--fail", "--retry", "3", "--retry-all-errors",
+            "-A", "Mozilla/5.0", data["image_url"], "-o", str(source)
+        ], check=True)
+        if source.stat().st_size < 1000:
+            raise RuntimeError("Downloaded image is unexpectedly small")
+        # Use ffmpeg itself to decode common images/SVG is intentionally unsupported.
+        # Convert non-PPM image sources by letting ffmpeg decode them directly later.
+        image = source
+    return image
+
 def validate(path):
     data = load(path)
+    source = "generated scene" if str(data["image_url"]).startswith("generated://") else "public image URL"
     print("Validated:", data["duration"], "seconds 9:16")
     print("Hook:", data["hook"])
-    print("Image URL present: yes")
+    print("Source:", source)
     print("Music:", "original ambient bed" if data["music"] else "off")
 
 def render(input_path, output):
@@ -34,55 +94,37 @@ def render(input_path, output):
     out.parent.mkdir(parents=True, exist_ok=True)
     work = Path("/tmp/jojo-reel")
     work.mkdir(parents=True, exist_ok=True)
-
-    url_path = urlparse(data["image_url"]).path.lower()
-    source = work / ("input.svg" if url_path.endswith(".svg") else "input.bin")
-    image = work / "input.jpg"
+    image = prepare_image(data, work)
     title_file = work / "title.txt"
     body_file = work / "body.txt"
-
-    subprocess.run([
-        "curl", "-L", "--fail", "--retry", "3", "--retry-all-errors",
-        "-A", "Mozilla/5.0", data["image_url"], "-o", str(source)
-    ], check=True)
-
-    if source.stat().st_size < 1000:
-        raise RuntimeError("Downloaded image is unexpectedly small")
-
-    if url_path.endswith(".svg"):
-        subprocess.run([
-            "convert", str(source), "-background", "black",
-            "-flatten", "-quality", "92", str(image)
-        ], check=True)
-    else:
-        source.rename(image)
 
     hook = textwrap.fill(str(data["hook"]).strip(), width=25)
     body = textwrap.fill(str(data["body"]).strip(), width=34)
     title_file.write_text(hook, encoding="utf-8")
     body_file.write_text(body, encoding="utf-8")
 
+    # Keep composition mobile-safe and use a gentle camera push.
     frames = data["duration"] * FPS
     vf = (
         f"scale={W}:{H}:force_original_aspect_ratio=increase,"
         f"crop={W}:{H},"
-        f"zoompan=z='min(zoom+0.00045,1.07)':"
+        f"zoompan=z='min(zoom+0.00035,1.055)':"
         f"d={frames}:s={W}x{H}:fps={FPS},"
-        "drawbox=x=0:y=0:w=1080:h=1920:color=black@0.20:t=fill,"
-        "drawbox=x=54:y=118:w=972:h=420:color=0x07111e@0.90:t=fill,"
-        "drawbox=x=54:y=118:w=10:h=420:color=0x63d8ff@1:t=fill,"
+        "drawbox=x=0:y=0:w=1080:h=1920:color=black@0.16:t=fill,"
+        "drawbox=x=58:y=120:w=964:h=388:color=0x06101c@0.84:t=fill,"
+        "drawbox=x=58:y=120:w=9:h=388:color=0x63d8ff@1:t=fill,"
         "drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:"
         "textfile=/tmp/jojo-reel/title.txt:"
-        "fontcolor=white:fontsize=76:line_spacing=16:"
-        "x=92:y=175:box=0,"
+        "fontcolor=white:fontsize=70:line_spacing=12:"
+        "x=96:y=170:box=0,"
         "drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:"
         "textfile=/tmp/jojo-reel/body.txt:"
-        "fontcolor=white:fontsize=42:line_spacing=14:"
-        "x=92:y=390:box=0,"
+        "fontcolor=white:fontsize=38:line_spacing=12:"
+        "x=96:y=380:box=0,"
         "drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:"
-        "text='@aadityaxo':fontcolor=white@0.82:fontsize=30:"
-        "x=72:y=1818,"
-        "drawbox=x=72:y=1870:w='936*t/" + str(data["duration"]) + "':"
+        "text='@aadityaxo':fontcolor=white@0.80:fontsize=28:"
+        "x=74:y=1820,"
+        "drawbox=x=74:y=1870:w='932*t/" + str(data["duration"]) + "':"
         "h=8:color=0x63d8ff@0.95:t=fill,"
         "format=yuv420p"
     )
