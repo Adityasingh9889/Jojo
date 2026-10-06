@@ -26,7 +26,7 @@ def validate(path):
     print("Validated:", data["duration"], "seconds 9:16")
     print("Hook:", data["hook"])
     print("Image URL present: yes")
-    print("Music:", "ambient original bed" if data["music"] else "off")
+    print("Music:", "original ambient bed" if data["music"] else "off")
 
 def render(input_path, output):
     data = load(input_path)
@@ -77,32 +77,20 @@ def render(input_path, output):
     ]
 
     if data["music"]:
-        # Original, royalty-free ambient bed generated procedurally in FFmpeg.
-        audio = (
-            "aevalsrc="
+        d = str(data["duration"])
+        pad_expr = (
             "0.050*sin(2*PI*220*t)+"
             "0.032*sin(2*PI*261.63*t)+"
             "0.024*sin(2*PI*329.63*t)+"
-            "0.018*sin(2*PI*392*t):"
-            "s=44100:d=" + str(data["duration"]) + ","
-            "tremolo=f=0.18:d=0.55,"
-            "volume=0.8"
+            "0.018*sin(2*PI*392*t)"
         )
-        kick = (
-            "aevalsrc="
-            "0.075*sin(2*PI*64*t)*exp(-38*mod(t,0.5)):"
-            "s=44100:d=" + str(data["duration"]) + ","
-            "volume=0.65"
-        )
-        air = (
-            "anoisesrc=color=pink:amplitude=0.035:"
-            "sample_rate=44100:duration=" + str(data["duration"]) + ","
-            "highpass=f=2500,lowpass=f=9000,volume=0.16"
-        )
+        kick_expr = "0.075*sin(2*PI*64*t)*exp(-38*mod(t,0.5))"
+        audio = f"aevalsrc=exprs='{pad_expr}':s=44100:d={d},tremolo=f=0.18:d=0.55,volume=0.8"
+        kick = f"aevalsrc=exprs='{kick_expr}':s=44100:d={d},volume=0.65"
+        air = f"anoisesrc=color=pink:amplitude=0.035:sample_rate=44100:duration={d},highpass=f=2500,lowpass=f=9000,volume=0.16"
+        fade_out_start = max(0, data["duration"] - 1.2)
         agraph = (
-            "[1:a]afade=t=in:st=0:d=0.8,afade=t=out:st="
-            + str(max(0, data["duration"]-1.2))
-            + ":d=1.2[a1];"
+            f"[1:a]afade=t=in:st=0:d=0.8,afade=t=out:st={fade_out_start}:d=1.2[a1];"
             "[2:a][3:a]amix=inputs=2:duration=longest,volume=0.70[a2];"
             "[a1][a2]amix=inputs=2:duration=longest,volume=0.82[a]"
         )
