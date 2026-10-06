@@ -41,11 +41,39 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENAI_QA_MODEL: ${{ vars.OPENAI_QA_MODEL }}
           META_GRAPH_VERSION: ${{ vars.META_GRAPH_VERSION }}
-          PUBLISH_SOURCE_TEMPLATE: ${{ vars.PUBLISH_SOURCE_TEMPLATE }}
+          PUBLISH_SOURCE_TEMPLATE: "https://raw.githubusercontent.com/Adityasingh9889/Jojo/main/creator/qa_runs/candidate_{iteration}.mp4"
           QA_MAX_ITERATIONS: "6"
           QA_MIN_SCORE: "9.2"
         run: |
           python scripts/instagram_quality_loop_v2.py --config creator/publish.json
+
+      - name: Persist winning recipe
+        if: success()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          winner = Path("creator/qa_runs/WINNER.json")
+          profile = Path("creator/qa_profile.json")
+          if winner.exists() and profile.exists():
+              w = json.loads(winner.read_text())
+              p = json.loads(profile.read_text())
+              p.setdefault("approved_examples", [])
+              p.setdefault("last_verified_winner", {})
+              p["approved_examples"].append({
+                  "iteration": w.get("iteration"),
+                  "score": w.get("score"),
+                  "defects_fixed": w.get("review", {}).get("critical_defects", []),
+                  "recipe_variant": w.get("published", {}).get("media_type"),
+                  "media_id": w.get("media_id")
+              })
+              p["last_verified_winner"] = {
+                  "iteration": w.get("iteration"),
+                  "score": w.get("score"),
+                  "media_id": w.get("media_id")
+              }
+              profile.write_text(json.dumps(p, indent=2) + "\n")
+          PY
 
       - name: Save QA memory
         if: always()
