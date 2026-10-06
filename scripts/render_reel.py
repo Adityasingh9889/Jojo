@@ -76,12 +76,11 @@ def render(input_path, output):
 
     cmd=["ffmpeg","-y"]+src+["-t",str(d)]
     if data["music"]:
-        pad=f"aevalsrc=exprs='0.050*sin(2*PI*220*t)+0.032*sin(2*PI*261.63*t)+0.024*sin(2*PI*329.63*t)+0.018*sin(2*PI*392*t)':s=44100:d={d},tremolo=f=0.18:d=0.55,volume=0.8"
-        kick=f"aevalsrc=exprs='0.075*sin(2*PI*64*t)*exp(-38*mod(t,0.5))':s=44100:d={d},volume=0.65"
-        air=f"anoisesrc=color=pink:amplitude=0.035:sample_rate=44100:duration={d},highpass=f=2500,lowpass=f=9000,volume=0.16"
+        tone1=f"sine=frequency=220:sample_rate=44100:duration={d}"
+        tone2=f"sine=frequency=277.18:sample_rate=44100:duration={d}"
         fade=max(0,d-1.2)
-        graph=f"[1:a]afade=t=in:st=0:d=0.8,afade=t=out:st={fade}:d=1.2[a1];[2:a][3:a]amix=inputs=2:duration=longest,volume=0.70[a2];[a1][a2]amix=inputs=2:duration=longest,volume=0.82[a]"
-        cmd += ["-f","lavfi","-i",pad,"-f","lavfi","-i",kick,"-f","lavfi","-i",air,"-filter_complex",graph,"-map","0:v:0","-map","[a]","-vf",vf,"-r",str(FPS),"-c:v","libx264","-preset","veryfast","-profile:v","high","-pix_fmt","yuv420p","-b:v","3M","-c:a","aac","-b:a","128k","-ar","44100","-ac","2","-shortest","-movflags","+faststart",str(out)]
+        graph=f"[1:a][2:a]amix=inputs=2:duration=longest:weights='1 0.6',volume=0.32,afade=t=in:st=0:d=0.8,afade=t=out:st={fade}:d=1.2[a]"
+        cmd += ["-f","lavfi","-i",tone1,"-f","lavfi","-i",tone2,"-filter_complex",graph,"-map","0:v:0","-map","[a]","-vf",vf,"-r",str(FPS),"-c:v","libx264","-preset","veryfast","-profile:v","high","-pix_fmt","yuv420p","-b:v","3M","-c:a","aac","-b:a","96k","-ar","44100","-ac","1","-shortest","-movflags","+faststart",str(out)]
     else:
         cmd += ["-vf",vf,"-r",str(FPS),"-an","-c:v","libx264","-preset","veryfast","-profile:v","high","-pix_fmt","yuv420p","-b:v","3M","-movflags","+faststart",str(out)]
     subprocess.run(cmd,check=True)
