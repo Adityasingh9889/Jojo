@@ -1,0 +1,1 @@
+# Neon Todo\n\n**Type:** Website\n\nA polished localStorage todo app.\n\nGenerated automatically by Jojo Daily Bot on 2026-10-07.\n\nOpen index.html in a browser.\n
