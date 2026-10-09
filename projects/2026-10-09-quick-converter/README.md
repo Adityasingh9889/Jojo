@@ -1,0 +1,1 @@
+# Quick Converter\n\n**Type:** Utility\n\nConvert length, weight and temperature units.\n\nGenerated automatically by Jojo Daily Bot on 2026-10-09.\n\nOpen index.html in a browser.\n
