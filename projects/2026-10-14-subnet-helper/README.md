@@ -1,0 +1,1 @@
+# Subnet Helper\n\n**Type:** Networking\n\nCalculate IPv4 CIDR address counts and usable hosts.\n\nGenerated automatically by Jojo Daily Bot on 2026-10-14.\n\nOpen index.html in a browser.\n
