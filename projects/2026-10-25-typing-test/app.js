@@ -1,0 +1,1 @@
+const t=document.querySelector('#text'),b=document.querySelector('#start'),r=document.querySelector('#result');b.onclick=()=>{t.disabled=false;t.value='';t.focus();b.disabled=true;r.textContent='30 seconds...';setTimeout(()=>{t.disabled=true;let w=t.value.trim().split(/\\s+/).filter(Boolean).length;r.textContent='≈ '+Math.round(w*2)+' WPM';b.disabled=false},30000)};
