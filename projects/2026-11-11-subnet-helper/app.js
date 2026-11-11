@@ -1,0 +1,1 @@
+const ip=document.querySelector('#ip'),c=document.querySelector('#cidr'),o=document.querySelector('#out');go.onclick=()=>{let p=+c.value;if(p<0||p>32)return;let total=2**(32-p),usable=p>=31?total:Math.max(0,total-2);o.textContent='Network: '+ip.value+'/'+p+'\\nTotal addresses: '+total.toLocaleString()+'\\nUsable hosts: '+usable.toLocaleString()+'\\nHost bits: '+(32-p)};
