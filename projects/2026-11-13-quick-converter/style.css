@@ -1,0 +1,1 @@
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:#111;color:white;font:16px system-ui}main{width:min(650px,90%)}p{color:#ffcf66;letter-spacing:2px}h1{font-size:56px}input,select{padding:15px;margin:5px;border-radius:10px;border:1px solid #333;background:#191919;color:white}h2{font-size:36px;color:#ffcf66}
